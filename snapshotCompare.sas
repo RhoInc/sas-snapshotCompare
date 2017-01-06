@@ -1,14 +1,15 @@
-/* ---------------------- Copyright 2015, Rho, Inc.  All rights reserved. ---------------------- */
+/*----------------------- Copyright 2015, Rho, Inc.  All rights reserved. ------------------------\
 
-/*-------------------------------------------------------------------------------------------------
+    snapshotCompare.sas
 
-    Program:      snapshotCompare
+        Compare dataset, variable, and ID metadata between two snapshots or directories and email
+        a summary of any differences.
 
-      Purpose:    Compare dataset, variable, and ID metadata between two snapshots or directories
+    /---------------------------------------------------------------------------------------------\
+      Examples
+    \---------------------------------------------------------------------------------------------/
 
-        Examples:
-
-          [Fully-qualified Path1 and Path2]
+        [Fully-qualified Path1 and Path2]
 
             %snapshotCompare
                 (Path1   = C:\Project\Data\NewSnapshot
@@ -18,7 +19,7 @@
                 ,Detail  = ALL
                 ,Project = Example Project);
 
-          [Fully-qualified Path1 and partially-qualified Path2 (see logic in Params section)]
+        [Fully-qualified Path1 and partially-qualified Path2 (see logic in Params section)]
 
             %snapshotCompare
                 (Path1   = C:\Project\Data
@@ -28,26 +29,33 @@
                 ,Detail  = ALL
                 ,Project = Example Project);
 
-          [Fully-qualified Path1 contains all snapshots in individual subfolders (see logic in Params section)]
+        [Fully-qualified Path1 contains all snapshots in individual subfolders (see logic in Params section)]
 
-            %snapshotCompare(Path1   = C:\Project\Data,
-                             Emails  = jane_doe@email.com john_doe@email.com,
-                             IDVar   = ID,
-                             Detail  = ALL,
-                             Project = Example Project);
+            %snapshotCompare
+                (Path1   = C:\Project\Data
+                ,Emails  = jane_doe@email.com john_doe@email.com
+                ,IDVar   = ID
+                ,Detail  = ALL
+                ,Project = Example Project);
 
-        Parameters:
 
-          [REQUIRED]
+    /---------------------------------------------------------------------------------------------\
+      Parameters
+    \---------------------------------------------------------------------------------------------/
 
-            Path1   - Directory of current snapshot or directory with all snapshots
+        [REQUIRED]
 
-            Emails  - List of pertinent email addresses
+            Path1
+                - Directory of current snapshot or directory with all snapshots
 
-          [optional]
+            Emails
+                - List of pertinent email addresses
 
-            Path2   - Directory of previous snapshot or folder name of previous
-                      snapshot within &Path1, e.g. 'Old'
+        [optional]
+
+            Path2
+                - Directory of previous snapshot or folder name of previous
+                  snapshot within &Path1, e.g. 'Old'
 
                 1.  If Path2 is fully-qualified, e.g.
                     C:\Project\Data\Old, snapshotCompare first looks in Path2
@@ -90,28 +98,33 @@
                             Path1 to those in the next most recently
                             created folder.
 
-            IDVar   - ID variable
+            IDVar
+                - ID variable
                         + Defaults to ID
 
-            Detail  - Detail level, a space-delimited list of the below values
-                        + Defaults to ALL
-                            > ALL generates the dataset-, variable-, and
-                               ID-level reports.
-                            > DS/DATA(SET) generates the dataset-level report.
-                            > VAR(IABLE) generates the variable-level report.
-                            > ID/SUBJECT generates the ID-level report.
+            Detail
+                - Detail level, a space-delimited list of the below values
+                    + Defaults to ALL
+                        > ALL generates the dataset-, variable-, and
+                           ID-level reports.
+                        > DS/DATA(SET) generates the dataset-level report.
+                        > VAR(IABLE) generates the variable-level report.
+                        > ID/SUBJECT generates the ID-level report.
 
-            Project - Project name which appears on the email subject line
+            Project
+                - Project name which appears on the email subject line
 
-      Output:     An email report with subject line &Project Snapshot Comparison - <today's date>
+/-------------------------------------------------------------------------------------------------\
+  Program History
+\-------------------------------------------------------------------------------------------------/
 
-  Program History:
+    Date        Programmer          Description
+    ----------  ------------------  --------------------------------------------------------------
+    2015-03-26  Spencer Childress   Create
+    2017-01-06  Spencer Childress   Fix dataset-level comparison issue and indicate change in
+                                    number of variables and observations
 
-      Date        Programmer            Description
-      ----------  --------------------  ---------------------------------------------------------
-      2015-03-26  Spencer Childress     Create
-
--------------------------------------------------------------------------------------------------*/
+\------------------------------------------------------------------------------------------------*/
 
 %macro snapshotCompare
     (Path1   = 
@@ -134,7 +147,9 @@
     %let compress_ = %sysfunc(getoption(compress));
     %let linesize_ = %sysfunc(getoption(linesize));
 
-    options noxwait nonotes threads compress = char linesize = 150;
+    options noxwait nonotes threads
+        compress = char
+        linesize = 150;
 
   %*Define regular expressions for Detail parameter.;
     %let DSRegex  = (all|ds|data(set)?);
@@ -703,15 +718,33 @@
                         fileclose2 = fclose(fileopen2);
                     end;
 
-                   *Metadata disparities traffic lighting;
+                   *Metadata disparities traffic lighting;/*"*/
                     array metadata  (*) $255 nvar  nobs  size  created  modified ;
                     array metadata1 (*)      nvar1 nobs1 size1 created1 modified1;
                     array metadata2 (*)      nvar2 nobs2 size2 created2 modified2;
 
                     do i = 1 to dim(metadata);
-                             if metadata1(i) gt metadata2(i) then metadata(i) = cats('<td align = "center"><b><font face = "courier new" color = "green">', putn(metadata2(i), vformat(metadata2(i))), '</font></b></td>');
-                        else if metadata1(i)  = metadata2(i) then metadata(i) = cats('<td align = "center"><b><font face = "courier new" color = "black">', putn(metadata2(i), vformat(metadata2(i))), '</font></b></td>');
-                        else if metadata1(i) lt metadata2(i) then metadata(i) = cats('<td align = "center"><b><font face = "courier new" color = "red">',   putn(metadata2(i), vformat(metadata2(i))), '</font></b></td>');
+                        if metadata1(i) gt metadata2(i)
+                            then metadata(i) = cats
+                                ('<td align = "center"><b><font face = "courier new" color = "green">'
+                                ,catx(' ('
+                                    ,putn(metadata1(i), vformat(metadata1(i)))
+                                    ,ifc(lowcase(vname(metadata(i))) in ('nvar', 'nobs'),
+                                        cats('+', put(metadata1(i) - metadata2(i), 8.), ')'), ''))
+                                ,'</font></b></td>');
+                        else if metadata1(i) = metadata2(i)
+                            then metadata(i) = cats
+                                ('<td align = "center"><b><font face = "courier new" color = "black">'
+                                ,putn(metadata1(i), vformat(metadata1(i)))
+                                ,'</font></b></td>');
+                        else if metadata1(i) lt metadata2(i)
+                            then metadata(i) = cats
+                                ('<td align = "center"><b><font face = "courier new" color = "red">'
+                                ,catx(' ('
+                                    ,putn(metadata1(i), vformat(metadata1(i)))
+                                    ,ifc(lowcase(vname(metadata(i))) in ('nvar', 'nobs'),
+                                        cats(put(metadata1(i) - metadata2(i), 8.), ')'), ''))
+                                ,'</font></b></td>');
                     end;
 
                     if a and b;
