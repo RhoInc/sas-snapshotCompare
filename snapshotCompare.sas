@@ -11,32 +11,35 @@
 
         [Fully-qualified Path1 and Path2]
 
-            %snapshotCompare
-                (Path1   = C:\Project\Data\NewSnapshot
-                ,Emails  = jane_doe@email.com john_doe@email.com
-                ,Path2   = C:\Project\Data\OldSnapshot
-                ,IDVar   = ID
-                ,Detail  = ALL
-                ,Project = Example Project);
+            %snapshotCompare(
+                Path1   = C:\Project\Data\NewSnapshot,
+                Emails  = jane_doe@email.com john_doe@email.com,
+                Path2   = C:\Project\Data\OldSnapshot,
+                IDVar   = ID,
+                Detail  = ALL,
+                Project = Example Project
+            );
 
         [Fully-qualified Path1 and partially-qualified Path2 (see logic in Params section)]
 
-            %snapshotCompare
-                (Path1   = C:\Project\Data
-                ,Emails  = jane_doe@email.com john_doe@email.com
-                ,Path2   = Old
-                ,IDVar   = ID
-                ,Detail  = ALL
-                ,Project = Example Project);
+            %snapshotCompare(
+                Path1   = C:\Project\Data,
+                Emails  = jane_doe@email.com john_doe@email.com,
+                Path2   = Old,
+                IDVar   = ID,
+                Detail  = ALL,
+                Project = Example Project
+            );
 
         [Fully-qualified Path1 contains all snapshots in individual subfolders (see logic in Params section)]
 
-            %snapshotCompare
-                (Path1   = C:\Project\Data
-                ,Emails  = jane_doe@email.com john_doe@email.com
-                ,IDVar   = ID
-                ,Detail  = ALL
-                ,Project = Example Project);
+            %snapshotCompare(
+                Path1   = C:\Project\Data,
+                Emails  = jane_doe@email.com john_doe@email.com,
+                IDVar   = ID,
+                Detail  = ALL,
+                Project = Example Project
+            );
 
 
     /---------------------------------------------------------------------------------------------\
@@ -126,14 +129,14 @@
 
 \------------------------------------------------------------------------------------------------*/
 
-%macro snapshotCompare
-    (Path1   = 
-    ,Emails  = 
-    ,Path2   = 
-    ,IDVar   = ID
-    ,Detail  = ALL
-    ,Project = 
-    ) / minoperator;
+%macro snapshotCompare(
+    Path1   = ,
+    Emails  = ,
+    Path2   = ,
+    IDVar   = ID,
+    Detail  = ALL,
+    Project = 
+) / minoperator;
 
   %*Declare local macro variables.;
     %local xwait_ notes_ linesize_ DSRegex VarRegex IDRegex IDVarFN Path1Datasets Path2Datasets
